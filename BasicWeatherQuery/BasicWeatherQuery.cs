@@ -22,6 +22,7 @@ namespace BasicWeatherQuery
 	{
 		static string serverData { get; set; }
 
+		// This stuff allows text to be underlined later
 		const string UNDERLINE = "\x1B[4m";
 		const string RESET = "\x1B[0m";
 		const int STD_OUTPUT_HANDLE = -11;
@@ -60,7 +61,7 @@ namespace BasicWeatherQuery
 
 					GetCurrentForecast(lat, lng, tempScale);
 
-					FiveDayPrompt();
+					FiveDayPrompt(lat, lng, tempScale);
 				}
 
 				if (userChoice == "2")
@@ -83,7 +84,7 @@ namespace BasicWeatherQuery
 
 					GetCurrentForecast(lat, lng, tempScale);
 
-					FiveDayPrompt();
+					FiveDayPrompt(lat, lng, tempScale);
 				}
 				else
 				{
@@ -95,6 +96,8 @@ namespace BasicWeatherQuery
 
 		private static void GettingWeatherAnimation(bool isCurrentLocation)
 		{
+			Console.Clear();
+			Thread.Sleep(800);
 			Console.WriteLine();
 
 			if (isCurrentLocation)
@@ -133,25 +136,26 @@ namespace BasicWeatherQuery
 			StreamReader reader = new StreamReader(apiText);
 			serverData = reader.ReadToEnd();
 
-			MainClass tmp = JsonConvert.DeserializeObject<MainClass>((JObject.Parse(serverData)["list"]).ToString());
+			OpenWeatherMap_FiveDay.Welcome results = JsonConvert.DeserializeObject<OpenWeatherMap_FiveDay.Welcome> (serverData);
 
-			OpenWeatherMap_FiveDay.Weather condition =
-			JsonConvert.DeserializeObject<OpenWeatherMap_FiveDay.Weather>
-			((JObject.Parse(serverData)["list"]).ToString());
+			var filteredList = results.List.FirstOrDefault(x => x.Weather.First().Description.Contains("rain"));
 
-			Console.Write("TEMPERATURE: ");
-			if (tempScale == "F")
+			List<double> testCurrentTempResults = new List<double>();
+			List<double> testHighTempResults = new List<double>();
+			List<double> testLowTempResults = new List<double>();
+
+			foreach (var list in results.List)
 			{
-				Console.WriteLine(Math.Round((double)tmp.Temp * 1.8 - 459.67, 1) + "°F");
-			}
-			if (tempScale == "C")
-			{
-				Console.WriteLine(Math.Round((double)tmp.Temp - 273.15) + "°C");
+				testCurrentTempResults.Add(list.Main.Temp);
+				testHighTempResults.Add(list.Main.TempMax);
+				testLowTempResults.Add(list.Main.TempMin);
 			}
 
-			Console.WriteLine("CONDITIONS: " + condition.Description.ToUpper());
-			Console.WriteLine();
 
+			Console.WriteLine("TOMORROW'S HIGH: ");
+			Console.WriteLine("TOMORROW'S LOW: ");
+			Console.WriteLine(filteredList.Weather.First().Description);
+			
 			reader.Close();
 			response.Close();
 		}
@@ -168,11 +172,13 @@ namespace BasicWeatherQuery
 				serverData = reader.ReadToEnd();
 
 				// Pulls current temperature in Kelvin
-				Main tmp = JsonConvert.DeserializeObject<Main>((JObject.Parse(serverData)["main"]).ToString());
+				CurrentTemp tmp = JsonConvert.DeserializeObject<CurrentTemp>((JObject.Parse(serverData)["main"]).ToString());
+				//Main tmpMax = JsonConvert.DeserializeObject<Main>((JObject.Parse(serverData)["temp_max"]).ToString());
+				//Main tmpMin = JsonConvert.DeserializeObject<Main>((JObject.Parse(serverData)["temp_min"]).ToString());
 				OpenWeatherMap_Current.Weather condition = JsonConvert.DeserializeObject<OpenWeatherMap_Current.Weather>((JObject.Parse(serverData)["weather"][0]).ToString());
 
 				// Invokes logkeeper to track each query
-				InvokeCurrentTempLogkeeper(tmp);
+				InvokeCurrentTempLogkeeper(tmp.Temp);
 
 				Console.WriteLine();
 				Console.WriteLine("   " + UNDERLINE + "               " + RESET);
@@ -181,7 +187,7 @@ namespace BasicWeatherQuery
 				// Converts temperature in Kelvin to Farenheit or Celsius,
 				// dependent on user choice
 
-				DisplayTemp(tempScale, tmp);
+				DisplayTemp(tempScale, tmp.Temp, tmp.TempMax, tmp.TempMin);
 
 				Console.WriteLine("CONDITIONS: " + condition.Description.ToUpper());
 				Console.WriteLine();
@@ -197,16 +203,22 @@ namespace BasicWeatherQuery
 
 		}
 
-		private static void DisplayTemp(string tempScale, Main tmp)
+		private static void DisplayTemp(string tempScale, double temp, double tempMax, double tempMin)
 		{
-			Console.Write("TEMPERATURE: ");
+			Console.Write("CURRENT TEMPERATURE: ");
 			if (tempScale == "F")
 			{
-				Console.WriteLine(Math.Round((double)tmp.Temp * 1.8 - 459.67, 1) + "°F");
+				Console.WriteLine(Math.Round(temp * 1.8 - 459.67, 1) + "°F");
+				Console.WriteLine("HIGH: " + Math.Round(tempMax * 1.8 - 459.67, 1) + "°F");
+				Console.WriteLine("LOW: " + Math.Round(tempMin * 1.8 - 459.67, 1) + "°F");
+				Console.WriteLine();
 			}
 			if (tempScale == "C")
 			{
-				Console.WriteLine(Math.Round((double)tmp.Temp - 273.15) + "°C");
+				Console.WriteLine(Math.Round(temp - 273.15) + "°C");
+				Console.WriteLine("HIGH: " + Math.Round(tempMax - 273.15) + "°C");
+				Console.WriteLine("LOW: " + Math.Round(tempMin - 273.15) + "°C");
+				Console.WriteLine();
 			}
 		}
 
@@ -219,14 +231,14 @@ namespace BasicWeatherQuery
 		//  (**make sure to organize by unique location**)
 		/// </summary>
 		/// <param name="tmp">Takes JSON-parsed temperature</param>
-		private static void InvokeCurrentTempLogkeeper(Main tmp)
+		private static void InvokeCurrentTempLogkeeper(double currentTemp)
 		{
 			StreamWriter logKeeper = new StreamWriter("tempLog.txt", true);
 
 			logKeeper.WriteLine(DateTime.Now.ToString().PadRight(25) +
-								(Math.Round(tmp.Temp, 1)) + "°K".PadRight(5) +
-								(Math.Round((tmp.Temp * 1.8 - 459.67), 1) + "°F".PadRight(5) +
-								(Math.Round((tmp.Temp - 273.15), 1) + "°C")));
+								(Math.Round(currentTemp, 1)) + "°K".PadRight(5) +
+								(Math.Round((currentTemp * 1.8 - 459.67), 1) + "°F".PadRight(5) +
+								(Math.Round((currentTemp - 273.15), 1) + "°C")));
 
 			logKeeper.Close();
 		}
@@ -274,7 +286,7 @@ namespace BasicWeatherQuery
 			return new Tuple<float, float>(lat, lng);
 		}
 
-		static void FiveDayPrompt()
+		static void FiveDayPrompt(float lat, float lng, string tempScale)
 		{
 			Console.WriteLine("Would you like to get a five day forecast? (Y/N)");
 			string userChoice = Console.ReadLine().ToUpper();
@@ -285,11 +297,14 @@ namespace BasicWeatherQuery
 				userChoice = Console.ReadLine().ToUpper();
 			}
 
+			if (userChoice == "Y")
+			{
+				Get5DayForecast(lat, lng, tempScale);
+			}
+
 			Console.WriteLine();
 		}
 	}
-
-	
 
 }
 

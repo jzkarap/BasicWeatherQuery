@@ -60,7 +60,7 @@ namespace OpenWeatherMap_FiveDay
 		public long Dt { get; set; }
 
 		[JsonProperty("main")]
-		public JsonArrayAttribute Main { get; set; }
+		public FiveDayTemp Main { get; set; }
 
 		[JsonProperty("weather")]
 		public Weather[] Weather { get; set; }
@@ -87,7 +87,7 @@ namespace OpenWeatherMap_FiveDay
 		public long All { get; set; }
 	}
 
-	public partial class MainClass
+	public partial class FiveDayTemp
 	{
 		[JsonProperty("temp")]
 		public double Temp { get; set; }

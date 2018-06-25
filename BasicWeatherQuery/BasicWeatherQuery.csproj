@@ -49,9 +49,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\..\SideProjects\BasicWeatherQuery.cs" />
-    <Compile Include="API JSON serializing\Demo.cs" />
     <Compile Include="API JSON serializing\OpenWeatherMap_FiveDay.cs" />
+    <Compile Include="BasicWeatherQuery.cs" />
     <Compile Include="Menus\FiveDayMenu.cs" />
     <Compile Include="Menus\GetTempScale.cs" />
     <Compile Include="Menus\MainMenu.cs" />

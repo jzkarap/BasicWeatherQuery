@@ -19,7 +19,7 @@ namespace OpenWeatherMap_Current
 		public string Base { get; set; }
 
 		[JsonProperty("main")]
-		public Main Main { get; set; }
+		public CurrentTemp Main { get; set; }
 
 		[JsonProperty("visibility")]
 		public long Visibility { get; set; }
@@ -61,7 +61,7 @@ namespace OpenWeatherMap_Current
 		public double Lat { get; set; }
 	}
 
-	public partial class Main
+	public partial class CurrentTemp
 	{
 		[JsonProperty("temp")]
 		public double Temp { get; set; }
